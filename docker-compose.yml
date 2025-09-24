@@ -23,10 +23,12 @@ services:
       - "6379:6379"
 
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: agriplatform-web
+    command: sh -c "python manage.py migrate --noinput && gunicorn agriplatform.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend/web:/app/frontend
     ports:
       - "8000:8000"
     environment:
@@ -41,9 +43,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    volumes:
-      - ./backend:/app
-      - ./frontend/web:/app/frontend
 
 volumes:
   postgres_data:
