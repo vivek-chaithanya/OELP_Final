@@ -25,10 +25,10 @@ RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
-COPY backend/ ./backend
+COPY backend/ .
 
 # Copy frontend build into Django static folder
-COPY --from=frontend-build /app/frontend/dist ./backend/static
+COPY --from=frontend-build /app/frontend/dist ./static
 
 # Set environment variable for Django
 ENV DJANGO_SETTINGS_MODULE=agriplatform.settings.prod
@@ -37,4 +37,4 @@ ENV DJANGO_SETTINGS_MODULE=agriplatform.settings.prod
 EXPOSE 8000
 
 # Run migrations and start Gunicorn
-CMD ["sh", "-c", "python backend/manage.py migrate --noinput && gunicorn backend.agriplatform.wsgi:application --bind 0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn agriplatform.wsgi:application --bind 0.0.0.0:8000"]

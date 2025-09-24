@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:16
@@ -27,8 +29,7 @@ services:
     container_name: agriplatform-web
     command: sh -c "python manage.py migrate --noinput && gunicorn agriplatform.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - ./backend:/app/backend
-      - ./frontend/web:/app/frontend
+      - ./backend:/app
     ports:
       - "8000:8000"
     environment:
