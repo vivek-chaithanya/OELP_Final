@@ -1,13 +1,7 @@
-name: Frontend CI
+name: Frontend CI (disabled)
 
 on:
-  push:
-    paths:
-      - 'frontend/web/**'
-      - '.github/workflows/frontend-ci.yml'
-  pull_request:
-    paths:
-      - 'frontend/web/**'
+  workflow_dispatch:
 
 jobs:
   build:

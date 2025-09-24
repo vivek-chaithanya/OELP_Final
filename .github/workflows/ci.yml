@@ -1,11 +1,23 @@
-name: Backend CI (disabled)
+name: CI
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - 'backend/**'
+      - 'frontend/web/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/web/**'
 
 jobs:
-  test:
+  backend:
+    name: Backend (Django + PostgreSQL)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     services:
       postgres:
         image: postgres:16
@@ -16,11 +28,8 @@ jobs:
         ports:
           - '5432:5432'
         options: >-
-          --health-cmd="pg_isready -U postgres -d agriplatform" 
+          --health-cmd="pg_isready -U postgres -d agriplatform"
           --health-interval=10s --health-timeout=5s --health-retries=5
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,4 +67,33 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agriplatform
         run: |
           python manage.py test --verbosity 2
+
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+    needs: backend
+    defaults:
+      run:
+        working-directory: frontend/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/web/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --silent
+
+      - name: Build
+        env:
+          VITE_API_BASE: http://localhost:8000
+        run: npm run build --silent
 
