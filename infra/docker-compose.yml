@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: agriplatform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    env_file:
+      - ../backend/.env
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/agriplatform
+      - REDIS_URL=redis://redis:6379/1
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+  frontend:
+    build:
+      context: ../frontend/web
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_BASE=http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+volumes:
+  pgdata:

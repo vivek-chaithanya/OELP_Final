@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: agriplatform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: agriplatform.settings.prod
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+volumes:
+  pgdata:
