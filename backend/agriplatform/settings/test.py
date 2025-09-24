@@ -6,7 +6,6 @@ ALLOWED_HOSTS = ["*"]
 
 # Merge apps needed for tests
 INSTALLED_APPS += [
-    'rest_framework',
     'django_filters',
     'drf_spectacular',
     'accounts',
