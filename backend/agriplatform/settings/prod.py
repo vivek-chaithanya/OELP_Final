@@ -77,3 +77,10 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = True
 
 
+FRONTEND_DIR = os.path.join(BASE_DIR, "static")  # backend/agriplatform/static
+
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [FRONTEND_DIR]
+
+# Serve frontend index.html for catch-all routes
+TEMPLATES[0]['DIRS'] = [FRONTEND_DIR]
