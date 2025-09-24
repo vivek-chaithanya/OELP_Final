@@ -1,27 +1,42 @@
+# Stage 1: Build frontend
+FROM node:20 AS frontend-build
+
+WORKDIR /app/frontend
+
+# Copy frontend package files and install dependencies
+COPY frontend/web/package*.json ./
+RUN npm ci
+
+# Copy frontend source and build
+COPY frontend/web/ ./
+RUN npm run build
+
 # Stage 2: Backend
 FROM python:3.13-slim
 
 WORKDIR /app
 
-# System dependencies
-RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
+# System dependencies needed for psycopg2
+RUN apt-get update && \
+    apt-get install -y build-essential libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy backend requirements and install
-COPY backend/requirements.txt .
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
-COPY backend/ .
+COPY backend/ ./backend
 
 # Copy frontend build into Django static folder
-COPY --from=frontend-build /app/frontend/dist ./static
+COPY --from=frontend-build /app/frontend/dist ./backend/static
 
-# Set environment variable
+# Set environment variable for Django
 ENV DJANGO_SETTINGS_MODULE=agriplatform.settings.prod
 
 # Expose port
 EXPOSE 8000
 
 # Run migrations and start Gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn agriplatform.wsgi:application --bind 0.0.0.0:8000"]
+CMD ["sh", "-c", "python backend/manage.py migrate --noinput && gunicorn backend.agriplatform.wsgi:application --bind 0.0.0.0:8000"]
