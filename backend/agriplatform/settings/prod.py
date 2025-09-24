@@ -6,6 +6,10 @@ DEBUG = False
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 
+# Ensure a secure secret key is used in production
+if os.getenv("SECRET_KEY"):
+    SECRET_KEY = os.getenv("SECRET_KEY")
+
 INSTALLED_APPS += [
     'rest_framework',
     'corsheaders',

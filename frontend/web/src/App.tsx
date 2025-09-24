@@ -52,8 +52,11 @@ function Login() {
 }
 
 function Dashboard() {
-	const { state } = useAuth();
+    const { state } = useAuth();
+    const roleName = state.user?.role?.name || 'User';
     const [revenue, setRevenue] = useState<any>(null);
+    const [activeUsers, setActiveUsers] = useState<number | null>(null);
+    const [counts, setCounts] = useState<{ farms: number; fields: number; crops: number; soil: number; notifications: number; plans: number; payments: number }>({ farms: 0, fields: 0, crops: 0, soil: 0, notifications: 0, plans: 0, payments: 0 });
     const [range, setRange] = useState<'6m'|'1y'|'all'>('6m');
     const [series, setSeries] = useState<{date: string; captured: number; refunded: number}[]>([]);
 
@@ -62,54 +65,121 @@ function Dashboard() {
         let start = '';
         if (range === '6m') { const d = new Date(now); d.setMonth(d.getMonth()-6); start = d.toISOString().slice(0,10); }
         if (range === '1y') { const d = new Date(now); d.setFullYear(d.getFullYear()-1); start = d.toISOString().slice(0,10); }
-        const r = await api.get('/api/analytics/revenue', { params: start ? { start } : {} });
-        setRevenue(r.data);
-        // fake simple series from totals for visualization (backend can be extended later)
+
+        const reqs: Promise<any>[] = [
+            api.get('/api/analytics/revenue', { params: start ? { start } : {} }),
+            api.get('/api/farms/'),
+            api.get('/api/fields/'),
+            api.get('/api/crops/'),
+            api.get('/api/soil-reports/'),
+            api.get('/api/notifications/'),
+            api.get('/api/user/plans/'),
+        ];
+        if (roleName === 'SuperAdmin' || roleName === 'Admin') {
+            reqs.push(api.get('/api/analytics/active-users'));
+        }
+        // For payments count, reuse revenue range; as a fallback count all payments via payments history if available later.
+        // We will approximate by treating any revenue response as at least one payment
+
+        const results = await Promise.allSettled(reqs);
+        const revRes = results[0].status === 'fulfilled' ? (results[0] as any).value.data : { captured: 0, refunded: 0 };
+        setRevenue(revRes);
         setSeries([
-            { date: 'Start', captured: r.data.captured || 0, refunded: r.data.refunded || 0 },
-            { date: 'Now', captured: r.data.captured || 0, refunded: r.data.refunded || 0 },
+            { date: 'Start', captured: revRes.captured || 0, refunded: revRes.refunded || 0 },
+            { date: 'Now', captured: revRes.captured || 0, refunded: revRes.refunded || 0 },
         ]);
+
+        const safeLen = (idx: number) => results[idx] && results[idx].status === 'fulfilled' ? ((results[idx] as any).value.data.length || 0) : 0;
+        const farms = safeLen(1);
+        const fields = safeLen(2);
+        const crops = safeLen(3);
+        const soil = safeLen(4);
+        const notifications = safeLen(5);
+        const plans = safeLen(6);
+        const payments = (revRes.captured || 0) > 0 || (revRes.refunded || 0) > 0 ? 1 : 0;
+        setCounts({ farms, fields, crops, soil, notifications, plans, payments });
+
+        if (roleName === 'SuperAdmin' || roleName === 'Admin') {
+            const auIdx = 7; // last in array if pushed
+            if (results[auIdx] && results[auIdx].status === 'fulfilled') {
+                setActiveUsers((results[auIdx] as any).value.data.active_users || 0);
+            } else {
+                setActiveUsers(0);
+            }
+        } else {
+            setActiveUsers(null);
+        }
     };
 
     useEffect(() => { load(); }, [range]);
-	return (
-		<Layout>
-			<div className="p-0 space-y-4">
-				<h1 className="text-2xl font-bold">Welcome, {state.user?.username}</h1>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<div className="p-4 bg-white rounded shadow">
-						<div className="text-gray-500">Revenue (captured)</div>
-						<div className="text-2xl font-semibold">₹ {revenue?.captured ?? 0}</div>
-					</div>
-					<div className="p-4 bg-white rounded shadow">
-						<div className="text-gray-500">Refunded</div>
-						<div className="text-2xl font-semibold">₹ {revenue?.refunded ?? 0}</div>
-					</div>
-				</div>
-                <div className="bg-white rounded shadow p-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="font-semibold">Revenue Trend</div>
-                        <div className="flex gap-2">
-                            <button className={`px-3 py-1 border rounded ${range==='6m'?'bg-gray-100':''}`} onClick={()=>setRange('6m')}>6 months</button>
-                            <button className={`px-3 py-1 border rounded ${range==='1y'?'bg-gray-100':''}`} onClick={()=>setRange('1y')}>1 year</button>
-                            <button className={`px-3 py-1 border rounded ${range==='all'?'bg-gray-100':''}`} onClick={()=>setRange('all')}>All</button>
+
+    const Card = ({ title, value, accent }: { title: string; value: any; accent?: string }) => (
+        <div className={`p-4 bg-white rounded shadow border-t-4 ${accent || 'border-green-600'}`}>
+            <div className="text-gray-500">{title}</div>
+            <div className="text-2xl font-semibold">{value}</div>
+        </div>
+    );
+
+    return (
+        <Layout>
+            <div className="p-0 space-y-4">
+                <h1 className="text-2xl font-bold">Welcome, {state.user?.username}</h1>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(roleName === 'SuperAdmin' || roleName === 'Admin' || roleName === 'Business' || roleName === 'Analyst') && (
+                        <Card title="Revenue (captured)" value={`₹ ${revenue?.captured ?? 0}`} accent="border-green-600" />
+                    )}
+                    {(roleName === 'SuperAdmin' || roleName === 'Admin' || roleName === 'Business') && (
+                        <Card title="Refunded" value={`₹ ${revenue?.refunded ?? 0}`} accent="border-red-500" />
+                    )}
+                    {(roleName === 'SuperAdmin' || roleName === 'Admin') && (
+                        <Card title="Active Users" value={activeUsers ?? 0} accent="border-blue-600" />
+                    )}
+                    {(roleName === 'User' || roleName === 'Admin' || roleName === 'SuperAdmin') && (
+                        <Card title="Farms" value={counts.farms} accent="border-amber-500" />
+                    )}
+                    {(roleName === 'Agronomist' || roleName === 'User' || roleName === 'Admin' || roleName === 'SuperAdmin') && (
+                        <Card title="Soil Reports" value={counts.soil} accent="border-emerald-600" />
+                    )}
+                    {(roleName === 'User' || roleName === 'Agronomist' || roleName === 'Admin' || roleName === 'SuperAdmin') && (
+                        <Card title="Crops" value={counts.crops} accent="border-indigo-600" />
+                    )}
+                    {(roleName === 'Business') && (
+                        <Card title="Active Plans" value={counts.plans} accent="border-fuchsia-600" />
+                    )}
+                    {(roleName === 'Support') && (
+                        <Card title="Notifications (assigned/sent)" value={counts.notifications} accent="border-cyan-600" />
+                    )}
+                    {(roleName === 'Development') && (
+                        <Card title="Entities (total)" value={counts.farms + counts.fields + counts.crops} accent="border-slate-600" />
+                    )}
+                </div>
+
+                {(roleName === 'SuperAdmin' || roleName === 'Admin' || roleName === 'Business' || roleName === 'Analyst') && (
+                    <div className="bg-white rounded shadow p-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="font-semibold">Revenue Trend</div>
+                            <div className="flex gap-2">
+                                <button className={`px-3 py-1 border rounded ${range==='6m'?'bg-gray-100':''}`} onClick={()=>setRange('6m')}>6 months</button>
+                                <button className={`px-3 py-1 border rounded ${range==='1y'?'bg-gray-100':''}`} onClick={()=>setRange('1y')}>1 year</button>
+                                <button className={`px-3 py-1 border rounded ${range==='all'?'bg-gray-100':''}`} onClick={()=>setRange('all')}>All</button>
+                            </div>
+                        </div>
+                        <div style={{ width: '100%', height: 240 }}>
+                            <ResponsiveContainer>
+                                <LineChart data={series}>
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Line type="monotone" dataKey="captured" stroke="#16a34a" />
+                                    <Line type="monotone" dataKey="refunded" stroke="#ef4444" />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                    <div style={{ width: '100%', height: 240 }}>
-                        <ResponsiveContainer>
-                            <LineChart data={series}>
-                                <XAxis dataKey="date" />
-                                <YAxis />
-                                <Tooltip />
-                                <Line type="monotone" dataKey="captured" stroke="#16a34a" />
-                                <Line type="monotone" dataKey="refunded" stroke="#ef4444" />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-			</div>
-		</Layout>
-	);
+                )}
+            </div>
+        </Layout>
+    );
 }
 
 function FarmsPage() { return <Layout><Farms /></Layout>; }

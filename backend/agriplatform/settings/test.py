@@ -4,7 +4,19 @@ import os
 DEBUG = False
 ALLOWED_HOSTS = ["*"]
 
-# Minimal installed apps for tests inherit from base; CI-safe adjustments go here if needed
+# Merge apps needed for tests
+INSTALLED_APPS += [
+    'rest_framework',
+    'django_filters',
+    'drf_spectacular',
+    'accounts',
+    'core',
+    'subscriptions',
+    'notifications',
+    'analytics',
+    'payments',
+    'api',
+]
 
 # Use local memory cache to avoid Redis dependency in CI
 CACHES = {
@@ -15,23 +27,39 @@ CACHES = {
 }
 
 # Email to console to avoid external services
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
-# Auth model setting (keep consistent with dev/prod)
+# Auth model setting
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
-# JWT settings (keep simple/defaults during tests)
+# JWT / DRF settings for CI
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.AllowAny',  # AllowAny for CI
     ),
 }
+
+# Database configuration for CI (PostgreSQL)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'agriplatform'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+    }
+}
+
+# Faster password hashing for tests
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
 
 # Disable FCM/external keys in tests
 FCM_DJANGO_SETTINGS = {
     'FCM_SERVER_KEY': 'test-key',
 }
-
