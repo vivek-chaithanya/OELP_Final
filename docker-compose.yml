@@ -25,11 +25,13 @@ services:
       - "6379:6379"
 
   web:
-    build: .
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: agriplatform-web
     command: sh -c "python manage.py migrate --noinput && gunicorn agriplatform.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - ./backend:/app/backend
+      - ./backend:/app
     ports:
       - "8000:8000"
     environment:
