@@ -1,13 +1,5 @@
-from .base import *
+from .dev import *
 import os
-
-# Use SQLite for fast, self-contained CI tests
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'test_db.sqlite3',
-    }
-}
 
 DEBUG = False
 ALLOWED_HOSTS = ["*"]

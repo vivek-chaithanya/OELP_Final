@@ -12,6 +12,18 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agriplatform
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - '5432:5432'
+        options: >-
+          --health-cmd="pg_isready -U postgres -d agriplatform" 
+          --health-interval=10s --health-timeout=5s --health-retries=5
     defaults:
       run:
         working-directory: backend
@@ -41,6 +53,7 @@ jobs:
       - name: Django checks and migrations
         env:
           DJANGO_SETTINGS_MODULE: agriplatform.settings.test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agriplatform
         run: |
           python manage.py check --deploy --fail-level WARNING || true
           python manage.py migrate --noinput
@@ -48,6 +61,7 @@ jobs:
       - name: Run tests
         env:
           DJANGO_SETTINGS_MODULE: agriplatform.settings.test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agriplatform
         run: |
           python manage.py test --verbosity 2
 
