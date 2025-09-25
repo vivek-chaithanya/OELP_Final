@@ -76,6 +76,3 @@ class NotificationViewSet(viewsets.ModelViewSet):
             send_push(notif.receiver, subject or "Notification", body)
         notif.sent_at = timezone.now()
         notif.save()
-from django.shortcuts import render
-
-# Create your views here.

@@ -4,22 +4,6 @@ import os
 DEBUG = False
 ALLOWED_HOSTS = ["*"]
 
-# Merge apps needed for tests
-INSTALLED_APPS += [
-    # only apps not already in dev/base
-    'drf_spectacular',
-    'accounts',
-    'core',
-    'subscriptions',
-    'notifications',
-    'analytics',
-    'payments',
-    'api',
-]
-
-# Remove duplicates just in case
-INSTALLED_APPS = list(dict.fromkeys(INSTALLED_APPS)) 
-
 # Use local memory cache to avoid Redis dependency in CI
 CACHES = {
     'default': {
@@ -30,9 +14,6 @@ CACHES = {
 
 # Email to console to avoid external services
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-
-# Auth model setting
-AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # JWT / DRF settings for CI
 REST_FRAMEWORK = {

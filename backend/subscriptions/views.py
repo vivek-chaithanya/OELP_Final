@@ -45,6 +45,3 @@ class UserPlanViewSet(viewsets.ModelViewSet):
         last.status = 'cancelled'
         last.save()
         return Response(UserPlanSerializer(last).data)
-from django.shortcuts import render
-
-# Create your views here.

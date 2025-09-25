@@ -23,7 +23,3 @@ class Notification(models.Model):
     sent_at = models.DateTimeField(blank=True, null=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
-from django.db import models
-
-# Create your models here.

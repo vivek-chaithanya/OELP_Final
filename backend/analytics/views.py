@@ -58,6 +58,3 @@ class CropsExportView(APIView):
         for c in Crop.objects.all().order_by('id'):
             writer.writerow([c.id, c.name, c.description])
         return response
-from django.shortcuts import render
-
-# Create your views here.

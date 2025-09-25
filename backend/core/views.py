@@ -109,6 +109,3 @@ class SoilReportViewSet(viewsets.ModelViewSet):
                 return qs.filter(field_id=field_id) if field_id else qs
         qs = SoilReport.objects.filter(field__farm__owner=user)
         return qs.filter(field_id=field_id) if field_id else qs
-from django.shortcuts import render
-
-# Create your views here.

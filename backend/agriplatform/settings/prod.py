@@ -10,46 +10,8 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 if os.getenv("SECRET_KEY"):
     SECRET_KEY = os.getenv("SECRET_KEY")
 
-INSTALLED_APPS += [
-    'rest_framework',
-    'corsheaders',
-    'django_filters',
-    'drf-spectacular',
-    'fcm_django',
-    'accounts',
-    'core',
-    'subscriptions',
-    'notifications',
-    'analytics',
-    'payments',
-    'api',
-]
-
-MIDDLEWARE.insert(1, 'corsheaders.middleware.CorsMiddleware')
-
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if os.getenv("CORS_ALLOWED_ORIGINS") else ["*"]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
-
-SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
-
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Agri Platform API',
-    'DESCRIPTION': 'OELP Farming Platform API',
-    'VERSION': '1.0.0',
-}
-
-AUTH_USER_MODEL = 'accounts.CustomUser'
+# Override CORS settings for production
+CORS_ALLOW_ALL_ORIGINS = True
 
 DATABASES = {
     'default': dj_database_url.parse(os.environ['DATABASE_URL'])
@@ -65,6 +27,7 @@ CACHES = {
     }
 }
 
+# Override FCM settings for production
 FCM_DJANGO_SETTINGS = {
     'FCM_SERVER_KEY': os.getenv('FCM_SERVER_KEY', ''),
 }

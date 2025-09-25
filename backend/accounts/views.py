@@ -130,6 +130,3 @@ class RegionViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         from .serializers import RegionSerializer
         return RegionSerializer
-from django.shortcuts import render
-
-# Create your views here.

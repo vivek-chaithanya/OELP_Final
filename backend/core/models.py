@@ -78,6 +78,3 @@ class SoilReport(models.Model):
     potassium = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
     organic_matter = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     notes = models.TextField(blank=True)
-from django.db import models
-
-# Create your models here.
